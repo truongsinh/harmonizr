@@ -280,7 +280,7 @@ function processClasses(modifier, options) {
 
         // Replace the trailing } with a return for the IIFE pattern
         modifier.replace({line: node.body.loc.end.line, column: node.body.loc.end.column - 1}, node.loc.end,
-            '; return ' + name + ';})()' + (node.type === Syntax.ClassDeclaration ? ';' : ''));
+            '; return ' + name + ';})())' + (node.type === Syntax.ClassDeclaration ? ';' : ''));
 
         methods.forEach(processMethod);
 
@@ -307,11 +307,11 @@ function processClasses(modifier, options) {
 
             // Replace start until the super class with IIFE pattern
             modifier.replace(node.loc.start, node.superClass.loc.start,
-                (node.type === Syntax.ClassDeclaration ? 'var ' + name + ' = ' : '') + '(function () {');
+                (node.type === Syntax.ClassDeclaration ? 'var ' + name + ' = ' : '') + '((function () {');
         } else {
             // Replace start of the ClassDeclaration with IIFE pattern
             modifier.replace(node.loc.start, node.body.loc.start,
-                (node.type === Syntax.ClassDeclaration ? 'var ' + name + ' = ' : '') + '(function () ');
+                (node.type === Syntax.ClassDeclaration ? 'var ' + name + ' = ' : '') + '((function () ');
         }
 
         if (classes.length <= 1) {

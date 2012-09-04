@@ -44,8 +44,8 @@ class Modifier {
         if (typeof to === 'number') {
             to = {line: from.line, column: from.column + to};
         }
-        this.insert(to, text);
         this.remove(from, to);
+        this.insert(from, text);
     }
 }
 

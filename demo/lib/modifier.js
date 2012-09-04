@@ -1,6 +1,6 @@
 define(['esprima'], function(esprima) {var parse = esprima.parse, Syntax = esprima.Syntax;
 
-var Modifier = (function () {
+var Modifier = ((function () {
     function Modifier(src) {
         this.ast = parse(src, { loc: true });
         this.lines = src.split('\n');
@@ -44,10 +44,10 @@ var Modifier = (function () {
         if (typeof to === 'number') {
             to = {line: from.line, column: from.column + to};
         }
-        this.insert(to, text);
         this.remove(from, to);
+        this.insert(from, text);
     }
-; return Modifier;})();
+; return Modifier;})());
 
 var Modifier = Modifier;
 /* vim: set sw=4 ts=4 et tw=80 : */

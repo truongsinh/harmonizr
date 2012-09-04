@@ -484,7 +484,7 @@ describe('harmonizr', function() {
             (new ((new A).b())).should.be.an.instanceof(A);\
         '));
 
-        it.skip('should support nested classes with newlines', runHarmonized('\
+        it('should support nested classes with newlines', runHarmonized('\
             class A {\n\
                 constructor() {}\n\
                 b() {\n\
@@ -506,7 +506,7 @@ describe('harmonizr', function() {
             a.a.should.equal(20);\
         '));
 
-        it.skip('should correctly inherit getters and setters', runHarmonized('\
+        it('should correctly inherit getters and setters', runHarmonized('\
             class A {\n\
                 get a() { return this._a + 10; }\n\
                 set a(a) { this._a = a; }\n\
@@ -596,11 +596,11 @@ describe('modifier', function () {
     });
 
     it('should support `replace` with newlines', function () {
-        var src      = 'var a = (\n\n42);';
-        var expected = 'var a = \n\n42;';
+        var src      = 'var a = (\n42\n);';
+        var expected = 'var a = 10\n\n;';
         var m = new Modifier(src);
-        var literal = m.ast.body[0].declarations[0].init;
-        m.replace(literal.loc.start, literal.loc.end, '42');
+        var expr = m.ast.body[0].declarations[0].init;
+        m.replace(expr.loc.start, expr.loc.end, '10');
         var actual = m.finish();
         actual.should.equal(expected);
     });

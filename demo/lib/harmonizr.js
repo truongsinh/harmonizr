@@ -683,7 +683,7 @@ var moduleStyles = {
             return 'var ' + imp.specifiers.map(function(spec) {
                 var id = spec.type === Syntax.Identifier ? spec.name : spec.id.name;
                 var from = spec.from ? joinPath(spec.from) : id;
-                return id + ' = ' + importFrom(imp) + '.' + from;
+                return id + ' = Y.' + importFrom(imp) + '.' + from;
             }).join(', ') + ';';
         },
         exports: function(mod, exps, options) {

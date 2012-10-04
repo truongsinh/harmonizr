@@ -669,7 +669,41 @@ var moduleStyles = {
         endModule: function(mod, options) {
             return '}();';
         }
-    }
+    },
+
+    yui: {
+        startModule: function(mod, imps, options) {
+            var header = "YUI().add('" + mod.id.name + "', function (Y) {";
+            return header;
+        },
+        importModuleDeclaration: function(mod, imp, options) {
+            return 'var ' + imp.id.name + ' = ' + importFrom(imp) + ';';
+        },
+        importDeclaration: function(mod, imp, options) {
+            return 'var ' + imp.specifiers.map(function(spec) {
+                var id = spec.type === Syntax.Identifier ? spec.name : spec.id.name;
+                var from = spec.from ? joinPath(spec.from) : id;
+                return id + ' = ' + importFrom(imp) + '.' + from;
+            }).join(', ') + ';';
+        },
+        exports: function(mod, exps, options) {
+            var indent1 = options.module ? '' : options.indent;
+            var indent2 = options.indent;
+            var returns = '\n' + indent1;
+            if (exps.length) {
+                returns += '\n' + exps.map(function(exp) {
+                    var id = exportName(exp);
+                    return indent1 + 'Y.' + id + ' = ' + id;
+                }).join(',\n');
+                returns += '\n' + indent1;
+            }
+            returns += '\n';
+            return returns;
+        },
+        endModule: function(mod, options) {
+            return "}, '0.0.1');";
+        }
+    },
 };
 
 function traverse(node, visitor) {

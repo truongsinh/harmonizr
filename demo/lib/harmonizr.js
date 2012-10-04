@@ -673,7 +673,7 @@ var moduleStyles = {
 
     yui: {
         startModule: function(mod, imps, options) {
-            var header = "YUI().add('" + mod.id.name + "', function (Y) {";
+            var header = "YUI().add('" + mod.id.name + "', function (Y, NAME) {";
             return header;
         },
         importModuleDeclaration: function(mod, imp, options) {
@@ -701,7 +701,16 @@ var moduleStyles = {
             return returns;
         },
         endModule: function(mod, options) {
-            return "}, '0.0.1');";
+            var returns = "}, '0.0.1'";
+            if (options.relatives.length > 1) {
+                returns += ", {requires: [";
+                returns += options.relatives.map(function(exp) {
+                    return "'" + exp.trim() + "'";
+                }).join(', ');
+                returns += "]}";
+            }
+            returns += ");";
+            return returns;
         }
     },
 };

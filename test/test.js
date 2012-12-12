@@ -4,7 +4,6 @@ var harmonizr = this.harmonizr || require('../lib/harmonizr');
 describe('harmonizr', function() {
 
     it('should say in which pipeline an error happened', function () {
-        // TODO: actually fix this case...
         var src      = 'a';
         var expected = '';
         try {
@@ -388,136 +387,137 @@ describe('harmonizr', function() {
     });
 
     describe('classes', function() {
+        /*jshint multistr:true */
 
-        it('supports empty class definitions', function() {
-            var src      = 'class A {}';
-            var expected = 'var A = (function () {function A() {};; return A;})();';
-            harmonize(src, expected);
-        });
+        it('should not be hoisted', runHarmonized('\
+            (function () {\n\
+                new A();\n\
+            }).should.throw();\n\
+            class A {}\
+        '));
 
-        it('supports class expressions', function() {
-            var src      = 'var B = class A {};';
-            var expected = 'var B = (function () {function A() {};; return A;})();';
-            harmonize(src, expected);
-        });
+        it('should create an instance', runHarmonized('\
+            class A\n\
+            {}\n\
+            (new A).should.be.an.instanceof(A);\
+        '));
 
-        it('supports class expressions without an id', function() {
-            var src      = 'var B = class {};';
-            var expected = 'var B = (function () {function __klass() {};; return __klass;})();';
-            harmonize(src, expected);
-        });
+        it('should support constructors', runHarmonized('\
+            class\n\
+            A\n\
+            {\n\
+                constructor(a) { this.a = a; }\n\
+            }\n\
+            (new A(10)).a.should.equal(10);\
+        '));
 
-        it('supports wrapped class expressions', function() {
-            var src      = 'var B = (class A {});';
-            var expected = 'var B = (function () {function A() {};; return A;})();';
-            harmonize(src, expected);
-        });
+        it('should support members', runHarmonized('\
+            class A { constructor(a) { this.a = a; }\n\
+                getA() { return this.a; } }\n\
+            (new A(10)).getA().should.equal(10);\
+        '));
 
-        it('supports wrapped class expressions with whitespaces', function() {
-            var src      = 'var B = (\n  \nclass A {}\n);';
-            var expected = 'var B = \n\n(function () {function A() {};\n; return A;})();';
-            harmonize(src, expected);
-        });
+        it('should support inheritance', runHarmonized('\
+            class A {}\n\
+            class B extends A {}\n\
+            (new B).should.be.an.instanceof(A);\
+        '));
 
-        it('supports class expressions in more parentheses', function() {
-            var src      = 'var B = (\n(\n(\n  \nclass A {}\n)\n)\n);';
-            var expected = 'var B = \n\n\n\n(function () {function A() {};\n\n\n; return A;})();';
-            harmonize(src, expected);
-        });
+        it('should support inheritance from an expression', runHarmonized('\
+            class A {}\n\
+            class B extends (false || true &&\n\
+                (new A).constructor) {}\n\
+            (new B).should.be.an.instanceof(A);\
+        '));
 
-        it('supports opening { on newline', function() {
-            var src      = 'class A \n\n  {}';
-            var expected = '\n\nvar A = (function () {function A() {};; return A;})();';
-            harmonize(src, expected);
-        });
+        it('should support anonymous class expressions', runHarmonized('\
+            class A {}\n\
+            var B = (\n\
+                ((class extends A {})\n\
+                ));\n\
+            (new B).should.be.an.instanceof(A);\
+        '));
 
-        it('supports constructors', function() {
-            var src      = 'class A {\n'+
-                           '  constructor(a) { this.a = a; }\n'+
-                           '}';
-            var expected = 'var A = (function () {\n  function A(a) { this.a = a; }\n; return A;})();';
-            harmonize(src, expected);
-        });
+        it('should support anonymous class expressions directly', runHarmonized('\
+            (new (class {\n\
+                constructor() { this.a = 10; }\n\
+            })()).a.should.equal(10);\
+        '));
 
-        it('supports extending from other classes', function() {
-            var src      = 'class A extends B {\n' +
-                           '  constructor(a) { this.a = a; }\n'+
-                           '}';
-            var expected = 'var A = (function () {var A__super = B;' +
-                           'var A__prototype = (typeof A__super !== "function" ? A__super : A__super.prototype);' +
-                           'A.prototype = Object.create(A__prototype); \n' +
-                           '  function A(a) { this.a = a; }\n; return A;})();';
-            harmonize(src, expected);
-        });
+        it('should support calls to super()', runHarmonized('\
+            class A {\n\
+                constructor() { this.a = 10; }\n\
+            }\n\
+            var i = 0;\n\
+            class B extends (false || ++i &&\n\
+                (new A).constructor) {\n\
+                constructor() { super(); }\n\
+            }\n\
+            (new B).a.should.equal(10);\n\
+            (new B)\n\
+            i.should.equal(1);\
+        '));
 
-        it('supports calls to super()', function() {
-            var src      = 'class A extends B {\n' +
-                           '  constructor(a) { super\n(\n); super\n  (\na); }\n'+
-                           '}';
-            var expected = 'var A = (function () {var A__super = B;' +
-                           'var A__prototype = (typeof A__super !== "function" ? A__super : A__super.prototype);' +
-                           'A.prototype = Object.create(A__prototype); \n' +
-                           '  function A(a) { A__super.bind(this)\n(\n); A__super.bind(this)\n  (\na); }\n; return A;})();';
-            harmonize(src, expected);
-        });
+        it('should support calls to super.method()', runHarmonized('\
+            class A {\n\
+                constructor() { this.a = 10; }\n\
+                getA() { return this.a; }\n\
+            }\n\
+            var i = 0;\n\
+            class B extends (false || ++i &&\n\
+                (new A).constructor) {\n\
+                constructor() { super(); }\n\
+                getA() { return super.getA() + 10; }\n\
+            }\n\
+            (new B).getA().should.equal(20);\n\
+            (new B)\n\
+            i.should.equal(1);\
+        '));
 
-        it('supports calls to super.method()', function() {
-            var src      = 'class A extends B {\n' +
-                           '  constructor() { (\nsuper.method\n).call(); return super.method; }\n'+
-                           '}';
-            var expected = 'var A = (function () {var A__super = B;' +
-                           'var A__prototype = (typeof A__super !== "function" ? A__super : A__super.prototype);' +
-                           'A.prototype = Object.create(A__prototype); \n' +
-                           '  function A() { (\nA__prototype.method.bind(this)\n).call(); return A__prototype.method.bind(this); }\n; return A;})();';
-            harmonize(src, expected);
-        });
+        it('should support nested classes', runHarmonized('\
+            class A {\n\
+                constructor() {}\n\
+                b() {\n\
+                    return class extends A { constructor() { super(); } };\n\
+                };\n\
+            }\n\
+            (new ((new A).b())).should.be.an.instanceof(A);\
+        '));
 
-        it('supports extending from an expression', function() {
-            var src      = 'class A extends\n (\n' +
-                           '  B && C\n' +
-                           ')\n\n {\n' +
-                           '  constructor(a) { this.a = a; }\n' +
-                           '}';
-            var expected = '\nvar A = (function () {var A__super = (\n  B && C\n);' +
-                           'var A__prototype = (typeof A__super !== "function" ? A__super : A__super.prototype);' +
-                           'A.prototype = Object.create(A__prototype);\n\n \n' +
-                           '  function A(a) { this.a = a; }\n; return A;})();';
-            harmonize(src, expected);
-        });
+        it('should support nested classes with newlines', runHarmonized('\
+            class A {\n\
+                constructor() {}\n\
+                b() {\n\
+                    return class\n\
+                        extends A\n\
+                        { constructor() { super(); } };\n\
+                };\n\
+            }\n\
+            (new ((new A).b())).should.be.an.instanceof(A);\
+        '));
 
-        it('supports member functions', function() {
-            var src      = 'class A {a(a) {}; b() {}}';
-            var expected = 'var A = (function () {function A() {};A.prototype.a = function(a) {}; A.prototype.b = function() {}; return A;})();';
-            harmonize(src, expected);
-        });
+        it('should support getters and setters', runHarmonized('\
+            class A {\n\
+                get a() { return this._a; }\n\
+                set a(a) { this._a = a + 10; }\n\
+            }\n\
+            var a = new A;\n\
+            a.a = 10;\n\
+            a.a.should.equal(20);\
+        '));
 
-        it('supports getter and setter members', function() {
-            var src      = 'class A {set a(a) {}; get b() {return b;}}';
-            var expected = 'var A = (function () {function A() {};' +
-                           'var __old_a = Object.getOwnPropertyDescriptor(A.prototype, "a"); Object.defineProperty(A.prototype, "a", {configurable: true, get: __old_a && __old_a.get, set: function(a) {}}); ' +
-                           'var __old_b = Object.getOwnPropertyDescriptor(A.prototype, "b"); Object.defineProperty(A.prototype, "b", {configurable: true, set: __old_b && __old_b.set, get: function() {return b;}})'+
-                           '; return A;})();';
-            harmonize(src, expected);
-        });
-
-        it('supports constructors and member functions', function() {
-            var src      = 'class A {constructor(a) { this.a = a; }; a(a) {}}';
-            var expected = 'var A = (function () {function A(a) { this.a = a; }; A.prototype.a = function(a) {}; return A;})();';
-            harmonize(src, expected);
-        });
-
-        it('supports nested classes', function() {
-            var src      = 'class A {a() { return (class extends A {constructor() { super(); } method() { return super.method(); }}); } }';
-            var expected = 'var A = (function () {function A() {};A.prototype.a = function() { return ' +
-                           '(function () {var __klass__super = A;' +
-                           'var __klass__prototype = (typeof __klass__super !== "function" ? __klass__super : __klass__super.prototype);' +
-                           '__klass.prototype = Object.create(__klass__prototype); ' +
-                           'function __klass() { __klass__super.bind(this)(); } '+
-                           '__klass.prototype.method = function() { return __klass__prototype.method.bind(this)(); }; return __klass;})()' +
-                           '; } ; return A;})();';
-            harmonize(src, expected);
-        });
-
+        it('should correctly inherit getters and setters', runHarmonized('\
+            class A {\n\
+                get a() { return this._a + 10; }\n\
+                set a(a) { this._a = a; }\n\
+            }\n\
+            class B extends A {\n\
+                set a(a) { this._a = a + 10; }\n\
+            }\n\
+            var b = new B;\n\
+            b.a = 10;\n\
+            b.a.should.equal(30);\
+        '));
 
     });
 
@@ -596,11 +596,11 @@ describe('modifier', function () {
     });
 
     it('should support `replace` with newlines', function () {
-        var src      = 'var a = (\n\n42);';
-        var expected = 'var a = \n\n42;';
+        var src      = 'var a = (\n42\n);';
+        var expected = 'var a = 10\n\n;';
         var m = new Modifier(src);
-        var literal = m.ast.body[0].declarations[0].init;
-        m.replace(literal.loc.start, literal.loc.end, '42');
+        var expr = m.ast.body[0].declarations[0].init;
+        m.replace(expr.loc.start, expr.loc.end, '10');
         var actual = m.finish();
         actual.should.equal(expected);
     });
@@ -624,6 +624,14 @@ describe('modifier', function () {
         m.ast.body[0].declarations[0].init.value.should.equal(42);
     });
 });
+
+function runHarmonized(src, options) {
+    /*jshint evil:true */
+    var harmonized = harmonizr.harmonize(src, options);
+    // maintain line numbers:
+    src.split('\n').length.should.equal(harmonized.split('\n').length);
+    return new Function(harmonized);
+}
 
 function harmonize(src, expected, options) {
     var actual;

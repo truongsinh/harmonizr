@@ -13,12 +13,15 @@ A "transpiler" that brings tomorrow's Harmony to today's JavaScript.
 
 ## Demo
 
-Look in the demo directory or try it
-[here](http://jdiamond.github.com/harmonizr/demo/demo.html).
+[Try it](http://harmonizr.truongsinh.pro/).
 
 ## Installation
 
+### From npm repository
     $ npm install harmonizr
+
+### From git repository
+    $ npm install git://github.com/truongsinh/harmonizr.git
 
 ## Usage
 
